@@ -3,10 +3,28 @@ import json
 import time
 from datetime import datetime
 
-busstopid = input("Stop ID > ")
+# messy loop to check for input of 4 digit number, valid stop id, and if there are upcoming departures
+start = 2
+while True:
+     if start != 1:        
+         busstopid = input('Input Stop ID > ')
+         if busstopid.isdigit() == True and len(str(busstopid)) == 4:
+             prediction_url = "https://api.ridewta.com/stops/" + busstopid + "/predictions"
+             print("URL IS: " + prediction_url)
+             response = requests.get(prediction_url)
+             try:
+                if response.json()['bustime-response']['error'][0]['msg'] == "No data found for parameter":
+                    print("Invalid stop ID!")
+                    continue
+             except:
+                break
+         else: 
+             print('Please input a valid stop ID')
+             continue
 
-prediction_url = "https://api.ridewta.com/stops/" + busstopid + "/predictions"
-print("URL IS: " + prediction_url)
+
+#prediction_url = "https://api.ridewta.com/stops/" + busstopid + "/predictions"
+#print("URL IS: " + prediction_url)
 
 # Call API
 response = requests.get(prediction_url)
@@ -44,7 +62,7 @@ print(current_time12hr)
 #print("")
 
 # print stop name
-stopname = response.json()['bustime-response']['prd'][1]['stpnm']
+stopname = response.json()['bustime-response']['prd'][0]['stpnm']
 
 # little dashed line visual seperation
 print("-"*len(stopname + " departures:"))
@@ -53,9 +71,13 @@ print(stopname + " departures:")
 print("")
 
 # attempt at parsing json data and printing relevant info (des+prdtm)
-# have to step down json? idk if that makes sense but every arg [] is a step down (9: is literally chopping the date off itll probably break eventually)
+# have to step navigate through dictionaries (9: is literally chopping the date off itll probably break eventually)
 
 xint = 0
+
+#if len(response.json()['bustime-response']['prd']) > 3:
+ #   rangee = len(response.json()['bustime-response']['prd'])
+
 
 # will return up to 12(?) max (API limit) in one request, modify xint range below
 for xint in range (3):
@@ -76,9 +98,11 @@ for xint in range (3):
     if hourdelta >= 1: 
         minutedelta = minutedelta + (hourdelta*60)
 
-    # if 1, use minute instead of minutes
+    # if 1, use minute instead of minutes, if 0 say departing
     if minutedelta == 1:
         minutestowait = str(minutedelta) + " minute"
+    elif minutedelta == 0:
+        minutestowait = "Now Departing!"
     else:
         minutestowait = str(minutedelta) + " minutes"
 
@@ -88,3 +112,6 @@ for xint in range (3):
     print(minutestowait)
     print(prdtm12hr)
     print(" ")
+
+# input to prevent pyinstaller exe from auto closing
+input("Press enter to continue...")
